@@ -136,7 +136,7 @@ module Ebayr
   #  To see a list of available calls, check out
   #  http://developer.ebay.com/DevZone/XML/docs/Reference/ebay/index.html
   def call(command, arguments = {})
-    Request.new(command, arguments).send
+    Request.new(self, command, arguments).send
   end
 
 

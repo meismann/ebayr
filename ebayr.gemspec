@@ -31,4 +31,5 @@ command-line client which aids integration into other projects.
   end
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'fakeweb'
+  gem.add_development_dependency 'pry'
 end

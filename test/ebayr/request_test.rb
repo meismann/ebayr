@@ -3,14 +3,28 @@ require 'test_helper'
 require 'ebayr/request'
 
 def xml_of(*args)
-  Ebayr::Request.new(:Blah, :input => args).__send__ :input_xml
+  Ebayr::Request.new(ebayr_api, :Blah, :input => args).__send__ :input_xml
 end
 
 describe Ebayr::Request do
 
+  let(:auth_token) { 'auth_token_123xyz' }
+  let(:ebayr_api) do
+    options = {}
+    Ebayr::API::REQUIRED_OPTIONS.each do |key|
+      if key == :auth_token
+        options[key] = auth_token
+      else
+        options[key] = 'dummy-value'
+      end
+    end
+    Ebayr::API.new options
+  end
+
+
   describe "uri" do
     it "is the Ebayr one" do
-      Ebayr::Request.new(:Blah).uri.must_equal(Ebayr.uri)
+      Ebayr::Request.new(ebayr_api, :Blah).uri.must_equal(Ebayr.uri)
     end
   end
 
@@ -47,18 +61,21 @@ describe Ebayr::Request do
     end
   end
 
-  describe "requester credentials" do
+  describe 'requester credentials' do
     it 'includes requester credentials when auth_token present' do
-      my_token = "auth-token-123xyz"
-      request = Ebayr::Request.new(:Blah, :auth_token => my_token)
+      request = Ebayr::Request.new(ebayr_api, :Blah)
       request.body.must_include "<RequesterCredentials>", "</RequesterCredentials>"
-      request.body.must_include "<eBayAuthToken>#{my_token}</eBayAuthToken>"
+      request.body.must_include "<eBayAuthToken>#{auth_token}</eBayAuthToken>"
     end
 
-    it 'excludes requester credentials when auth_token not present' do
-      request = Ebayr::Request.new(:Blah, :auth_token => nil)
-      request.body.wont_include "<RequesterCredentials>", "</RequesterCredentials>"
-      request.body.wont_include "<eBayAuthToken>", "</eBayAuthToken>"
+    describe "authentication is not given" do
+      let(:auth_token) { nil }
+
+      it 'excludes requester credentials' do
+        request = Ebayr::Request.new(ebayr_api, :Blah)
+        request.body.wont_include "<RequesterCredentials>", "</RequesterCredentials>"
+        request.body.wont_include "<eBayAuthToken>", "</eBayAuthToken>"
+      end
     end
   end
 

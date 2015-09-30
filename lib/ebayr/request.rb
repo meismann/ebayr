@@ -2,13 +2,13 @@
 module Ebayr #:nodoc:
   # Encapsulates a request which is sent to the eBay Trading API.
   class Request
-    include Ebayr
 
     attr_reader :command
 
     # Make a new call. The URI used will be that of Ebayr::uri, unless
     # overridden here (same for auth_token, site_id and compatability_level).
-    def initialize(command, options = {})
+    def initialize(configuration, command, options = {})
+      @configuration = configuration
       @command = camelize(command.to_s)
       @uri = options.delete(:uri) || self.uri
       @uri = URI.parse(@uri) unless @uri.is_a? URI
@@ -18,6 +18,14 @@ module Ebayr #:nodoc:
       @http_timeout = (options.delete(:http_timeout) || 60).to_i
       # Remaining options are converted and used as input to the call
       @input = options.delete(:input) || options
+    end
+
+    def method_missing(method, *args, &block)
+      if @configuration.respond_to?(method)
+        @configuration.send method, *args, &block
+      else
+        super
+      end
     end
 
     # Gets the path to which this request will be posted
