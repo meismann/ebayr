@@ -18,6 +18,7 @@ module Ebayr #:nodoc:
       @http_timeout = (options.delete(:http_timeout) || 60).to_i
       # Remaining options are converted and used as input to the call
       @input = options.delete(:input) || options
+      @attachment = options.delete(:attachment)
     end
 
     def method_missing(method, *args, &block)
@@ -42,19 +43,17 @@ module Ebayr #:nodoc:
         'X-EBAY-API-CERT-NAME' => cert_id.to_s,
         'X-EBAY-API-CALL-NAME' => @command.to_s,
         'X-EBAY-API-SITEID' => @site_id.to_s,
-        'Content-Type' => 'text/xml'
+        'Content-Type' => 'multipart/form-data; boundary=MIME_boundary'
       }
     end
 
     # Gets the body of this request (which is XML)
     def body
-      <<-XML
-        <?xml version="1.0" encoding="utf-8"?>
-        <#{@command}Request xmlns="urn:ebay:apis:eBLBaseComponents">
-          #{requester_credentials_xml}
-          #{input_xml}
-        </#{@command}Request>
-      XML
+      if @attachment
+        mime_body
+      else
+        xml_part_of_body
+      end
     end
 
     # Returns eBay requester credential XML if @auth_token is present
@@ -75,7 +74,7 @@ module Ebayr #:nodoc:
       http.read_timeout = @http_timeout
 
       # Output request XML if debug flag is set
-      puts body if debug == true
+      puts body if debug
 
       if @uri.port == 443
         http.use_ssl = true
@@ -95,6 +94,38 @@ module Ebayr #:nodoc:
     end
 
     private
+
+    def xml_part_of_body
+      <<-XML
+        <?xml version="1.0" encoding="utf-8"?>
+        <#{@command}Request xmlns="urn:ebay:apis:eBLBaseComponents">
+          #{requester_credentials_xml}
+          #{input_xml}
+        </#{@command}Request>
+      XML
+    end
+
+    def mime_body
+      boundary = "MIME_boundary"
+      crlf = "\r\n"
+
+      # The complete body consists of an XML request plus the binary attachment separated by boundaries
+      first_part  =  "--" + boundary + crlf
+      first_part  << 'Content-Disposition: form-data; name="XML Payload"' + crlf
+      first_part  << 'Content-Type: text/xml;charset=utf-8' + crlf + crlf
+      first_part  << xml_part_of_body
+      first_part  << crlf
+
+      second_part =  "--" + boundary + crlf
+      second_part << 'Content-Disposition: form-data; name="dummy"; filename="image.jpg' + crlf
+      second_part << "Content-Transfer-Encoding: binary" + crlf
+      second_part << "Content-Type: application/octet-stream" + crlf + crlf
+      second_part << File.read(@attachment)
+      second_part << crlf
+      second_part << "--" + boundary + "--" + crlf
+
+      first_part + second_part
+    end
 
     def input_xml
       xml @input
