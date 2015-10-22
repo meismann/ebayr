@@ -59,6 +59,10 @@ describe Ebayr::Request do
       args = [{ :a => 1 }, { :a => {:b => [1, 2] }}]
       xml_of(*args).must_equal '<a>1</a><a><b>1</b><b>2</b></a>'
     end
+
+    it 'encodes special chars xml safe' do
+      xml_of(:str => '&<>ä').must_equal '<str>&amp;&lt;&gt;ä</str>'
+    end
   end
 
   describe 'requester credentials' do

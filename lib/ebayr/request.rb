@@ -177,7 +177,7 @@ module Ebayr #:nodoc:
     def serialize(input)
       case input
         when Time then input.to_time.utc.iso8601
-        else input.to_s
+        else input.to_s.encode :xml => :text
       end
     end
 
