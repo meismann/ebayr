@@ -148,7 +148,7 @@ module Ebayr #:nodoc:
             if Array === v
               v.map { |elem| xml(k => elem) }
             else
-              "<#{k.to_s}>#{xml(v)}</#{k.to_s}>"
+              "<#{k.to_s}>#{xml(v)}</#{k.to_s.split.first}>"
             end
           end
         else

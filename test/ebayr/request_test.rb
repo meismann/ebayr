@@ -63,6 +63,14 @@ describe Ebayr::Request do
     it 'encodes special chars xml safe' do
       xml_of(:str => '&<>ä').must_equal '<str>&amp;&lt;&gt;ä</str>'
     end
+
+    it 'properly renders tag attributes' do
+      xml_of('a currencyID="EUR"' => 123).must_equal '<a currencyID="EUR">123</a>'
+    end
+
+    it 'properly renders multiple tag attributes' do
+      xml_of('a attr1="1" attr2="2"' => 123).must_equal '<a attr1="1" attr2="2">123</a>'
+    end
   end
 
   describe 'requester credentials' do
